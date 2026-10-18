@@ -1,5 +1,7 @@
 # System Inventory Collector
 
+[![CI](https://github.com/AJJudkins/system-inventory-collector/actions/workflows/ci.yml/badge.svg)](https://github.com/AJJudkins/system-inventory-collector/actions/workflows/ci.yml)
+
 IT teams often need a quick, consistent snapshot of a machine. This tool collects OS, CPU, memory, disk and installed Python package details from the local machine and writes JSON or CSV. It performs no network activity.
 
 > Portfolio project. Uses simulated/sample data only.
@@ -75,6 +77,19 @@ pytest
 - Reports only the primary disk path, and only Python packages in the running interpreter's environment, not OS packages.
 - Tested on Linux only; macOS and Windows should work but are untested.
 - Not a replacement for an enterprise asset-management tool.
+
+## Hardening notes
+- `--no-packages` omits the installed Python package list (which can reveal software).
+- `--output` creates the file owner-only (`0600`), and refuses to overwrite an existing file unless `--force` is given.
+- Errors (for example an unwritable path) exit with code 2 and a clear message.
+- Console script after `pip install -e .`: `system-inventory --no-packages`.
+
+## Security and testing status
+
+- **Safety:** local-only and read-only: no network connections, hostname excluded unless `--include-hostname`, `--no-packages` to omit software lists, output files are `0600` and never overwritten without `--force`.
+- **Tested:** collection, JSON/CSV output and file-safety behavior on Linux (containers and CI).
+- **Not tested:** Windows and macOS, systems without psutil in unusual environments, and any large fleet use; it inventories only the machine it runs on.
+- See [SECURITY.md](SECURITY.md).
 
 ## License
 

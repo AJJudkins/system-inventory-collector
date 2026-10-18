@@ -61,10 +61,12 @@ def python_packages():
     return dict(sorted(pkgs.items(), key=lambda kv: kv[0].lower()))
 
 
-def collect(include_hostname=False):
-    return {"os": os_info(include_hostname), "cpu": cpu_info(),
-            "memory": memory_info(), "disk": disk_info(),
-            "python_packages": python_packages()}
+def collect(include_hostname=False, include_packages=True):
+    data = {"os": os_info(include_hostname), "cpu": cpu_info(),
+            "memory": memory_info(), "disk": disk_info()}
+    if include_packages:
+        data["python_packages"] = python_packages()
+    return data
 
 
 def flatten(data, prefix=""):
@@ -92,15 +94,26 @@ def main(argv=None):
     ap.add_argument("--format", choices=["json", "csv"], default="json")
     ap.add_argument("--output", help="write to this local file instead of stdout")
     ap.add_argument("--include-hostname", action="store_true")
+    ap.add_argument("--no-packages", action="store_true", help="omit the installed Python package list")
+    ap.add_argument("--force", action="store_true", help="overwrite --output if it already exists")
     args = ap.parse_args(argv)
-    data = collect(args.include_hostname)
+    data = collect(args.include_hostname, not args.no_packages)
     text = json.dumps(data, indent=2) if args.format == "json" else to_csv(data)
     if args.output:
-        with open(args.output, "w", newline="") as f:
-            f.write(text)
+        if os.path.exists(args.output) and not args.force:
+            print(f"error: {args.output} exists (use --force to overwrite)", file=sys.stderr)
+            return 2
+        try:
+            fd = os.open(args.output, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)  # owner-only
+            with os.fdopen(fd, "w", newline="") as f:
+                f.write(text)
+        except OSError as e:
+            print(f"error: cannot write {args.output}: {e}", file=sys.stderr)
+            return 2
     else:
         sys.stdout.write(text + "\n")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

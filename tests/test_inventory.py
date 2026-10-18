@@ -37,3 +37,15 @@ def test_output_file(tmp_path):
     f = tmp_path / "inv.json"
     inv.main(["--output", str(f)])
     assert "os" in json.loads(f.read_text())
+
+
+def test_no_packages_and_safe_output(tmp_path):
+    import os
+    import inventory
+    assert "python_packages" not in inventory.collect(include_packages=False)
+    out = tmp_path / "inv.json"
+    assert inventory.main(["--output", str(out), "--no-packages"]) == 0
+    assert oct(os.stat(out).st_mode & 0o777) == "0o600"
+    assert inventory.main(["--output", str(out)]) == 2          # refuses to overwrite
+    assert inventory.main(["--output", str(out), "--force"]) == 0
+    assert inventory.main(["--output", str(tmp_path / "no" / "dir" / "x.json")]) == 2

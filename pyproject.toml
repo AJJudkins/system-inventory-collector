@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "system-inventory-collector"
+version = "0.2.0"
+description = "Local-only hardware/OS/package inventory snapshot with no network access."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+psutil = ["psutil"]
+dev = ["pytest"]
+
+[project.scripts]
+system-inventory = "inventory:main"
+
+[tool.setuptools]
+py-modules = ["inventory"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
